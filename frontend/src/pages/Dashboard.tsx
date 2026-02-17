@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [boards, setBoards] = useState<Board[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -32,11 +33,16 @@ const Dashboard = () => {
 
   const createBoard = async () => {
     if (!newTitle.trim()) return;
+    setCreating(true);
 
-    await api.post("/boards", { title: newTitle });
-    setNewTitle("");
-    setShowModal(false);
-    fetchBoards();
+    try {
+      await api.post("/boards", { title: newTitle });
+      setNewTitle("");
+      setShowModal(false);
+      fetchBoards();
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -79,34 +85,50 @@ const Dashboard = () => {
       {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl border border-slate-700">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              createBoard();
+            }}
+            className="bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl border border-slate-700"
+          >
             <h2 className="text-lg font-semibold text-white mb-4">
               Create New Board
             </h2>
 
             <input
+              autoFocus
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full bg-slate-700 border border-slate-600 p-3 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-slate-700 border border-slate-600 p-3 rounded-lg text-white"
               placeholder="Board title"
             />
 
             <div className="flex justify-end gap-3 mt-6">
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 bg-slate-600 text-gray-200 rounded-lg hover:bg-slate-500"
+                className="px-4 py-2 bg-slate-600 rounded-lg"
               >
                 Cancel
               </button>
 
               <button
-                onClick={createBoard}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                type="submit"
+                disabled={creating}
+                className="px-4 py-2 bg-blue-600 rounded-lg disabled:opacity-50"
               >
-                Create
+                {creating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Creating...
+                  </div>
+                ) : (
+                  "Create"
+                )}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

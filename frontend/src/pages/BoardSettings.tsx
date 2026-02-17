@@ -11,9 +11,9 @@ const BoardSettings = () => {
   const [members, setMembers] = useState<any[]>([]);
   const [role, setRole] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
-
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [confirmText, setConfirmText] = useState("");
+  const [renaming, setRenaming] = useState(false);
 
   useEffect(() => {
     fetchBoard();
@@ -49,11 +49,14 @@ const BoardSettings = () => {
 
   /* ================= RENAME ================= */
   const renameBoard = async () => {
+    setRenaming(true);
     try {
       await api.put(`/boards/${boardId}`, { title });
       toast.success("Board renamed");
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Only owner can rename");
+    } finally {
+      setRenaming(false);
     }
   };
 
@@ -128,9 +131,10 @@ const BoardSettings = () => {
           />
           <button
             onClick={renameBoard}
-            className="bg-blue-600 px-4 py-2 rounded"
+            disabled={renaming}
+            className="bg-blue-600 px-4 py-2 rounded disabled:opacity-50"
           >
-            Save Changes
+            {renaming ? "Saving..." : "Save Changes"}
           </button>
         </div>
       )}
@@ -185,8 +189,9 @@ const BoardSettings = () => {
             </h3>
 
             <p className="text-sm text-gray-400 mb-4">
-              This action cannot be undone.  
-              Type <span className="text-red-400 font-semibold">DELETE</span> to confirm.
+              This action cannot be undone. Type{" "}
+              <span className="text-red-400 font-semibold">DELETE</span> to
+              confirm.
             </p>
 
             <input
