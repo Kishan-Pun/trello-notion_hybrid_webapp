@@ -10,6 +10,10 @@ const BoardSettings = () => {
   const [title, setTitle] = useState("");
   const [members, setMembers] = useState<any[]>([]);
   const [role, setRole] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
 
   useEffect(() => {
     fetchBoard();
@@ -28,6 +32,22 @@ const BoardSettings = () => {
     setMembers(res.data);
   };
 
+  /* ================= INVITE ================= */
+  const inviteUser = async () => {
+    try {
+      await api.post(`/boards/${boardId}/invite`, {
+        email: inviteEmail,
+      });
+
+      toast.success("User invited successfully");
+      setInviteEmail("");
+      fetchMembers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Invite failed");
+    }
+  };
+
+  /* ================= RENAME ================= */
   const renameBoard = async () => {
     try {
       await api.put(`/boards/${boardId}`, { title });
@@ -37,16 +57,7 @@ const BoardSettings = () => {
     }
   };
 
-  const deleteBoard = async () => {
-    try {
-      await api.delete(`/boards/${boardId}`);
-      toast.success("Board deleted");
-      navigate("/dashboard");
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Only owner can delete");
-    }
-  };
-
+  /* ================= TRANSFER ================= */
   const transferOwnership = async (userId: string) => {
     try {
       await api.put(`/boards/${boardId}/transfer/${userId}`);
@@ -58,8 +69,20 @@ const BoardSettings = () => {
     }
   };
 
+  /* ================= DELETE ================= */
+  const deleteBoard = async () => {
+    try {
+      await api.delete(`/boards/${boardId}`);
+      toast.success("Board deleted");
+      navigate("/dashboard");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Only owner can delete");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900 p-6 text-gray-200">
+    <div className="min-h-screen bg-slate-900 p-6 text-gray-200 relative">
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => navigate(`/boards/${boardId}`)}
@@ -71,7 +94,30 @@ const BoardSettings = () => {
         <h1 className="text-2xl font-bold">Board Settings</h1>
       </div>
 
-      {/* RENAME SECTION */}
+      {/* INVITE */}
+      {(role === "OWNER" || role === "ADMIN") && (
+        <div className="bg-slate-800 p-6 rounded-xl mb-6">
+          <h2 className="font-semibold mb-3">Invite Member</h2>
+
+          <div className="flex gap-3">
+            <input
+              type="email"
+              placeholder="User email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              className="flex-1 bg-slate-700 border border-slate-600 p-2 rounded"
+            />
+            <button
+              onClick={inviteUser}
+              className="bg-green-600 px-4 py-2 rounded"
+            >
+              Invite
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* RENAME */}
       {role === "OWNER" && (
         <div className="bg-slate-800 p-6 rounded-xl mb-6">
           <h2 className="font-semibold mb-3">Rename Board</h2>
@@ -89,7 +135,7 @@ const BoardSettings = () => {
         </div>
       )}
 
-      {/* TRANSFER OWNERSHIP */}
+      {/* TRANSFER */}
       {role === "OWNER" && (
         <div className="bg-slate-800 p-6 rounded-xl mb-6">
           <h2 className="font-semibold mb-4">Transfer Ownership</h2>
@@ -122,7 +168,7 @@ const BoardSettings = () => {
           <h2 className="text-red-400 font-semibold mb-4">Danger Zone</h2>
 
           <button
-            onClick={deleteBoard}
+            onClick={() => setShowDeleteModal(true)}
             className="bg-red-600 px-4 py-2 rounded"
           >
             Delete Board
@@ -130,7 +176,54 @@ const BoardSettings = () => {
         </div>
       )}
 
-      {/* MEMBER VIEW MESSAGE */}
+      {/* DELETE CONFIRMATION MODAL */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-slate-800 p-6 rounded-xl w-96 shadow-xl">
+            <h3 className="text-lg font-semibold text-red-400 mb-4">
+              Are you absolutely sure?
+            </h3>
+
+            <p className="text-sm text-gray-400 mb-4">
+              This action cannot be undone.  
+              Type <span className="text-red-400 font-semibold">DELETE</span> to confirm.
+            </p>
+
+            <input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              className="w-full bg-slate-700 border border-slate-600 p-2 rounded mb-4"
+              placeholder="Type DELETE"
+            />
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setConfirmText("");
+                }}
+                className="bg-slate-600 px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                disabled={confirmText !== "DELETE"}
+                onClick={deleteBoard}
+                className={`px-4 py-2 rounded ${
+                  confirmText === "DELETE"
+                    ? "bg-red-600"
+                    : "bg-red-900 cursor-not-allowed"
+                }`}
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MEMBER VIEW */}
       {role !== "OWNER" && (
         <div className="bg-slate-800 p-6 rounded-xl text-gray-400">
           Only board owner can modify settings.

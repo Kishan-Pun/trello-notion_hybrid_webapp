@@ -127,3 +127,39 @@ export const deleteBoard = async (
     where: { id: boardId },
   });
 };
+
+export const inviteMemberToBoard = async (
+  boardId: string,
+  email: string
+) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const existing = await prisma.boardMember.findUnique({
+    where: {
+      boardId_userId: {
+        boardId,
+        userId: user.id,
+      },
+    },
+  });
+
+  if (existing) {
+    throw new Error("User already a member");
+  }
+
+  await prisma.boardMember.create({
+    data: {
+      boardId,
+      userId: user.id,
+      role: "MEMBER",
+    },
+  });
+
+  return { message: "User added successfully" };
+};

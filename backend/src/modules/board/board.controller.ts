@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware.js";
 import { createBoard, getUserBoards } from "./board.service.js";
 import prisma from "../../config/prisma.js";
+import { inviteMemberToBoard } from "./board.service.js";
 
 export const createBoardHandler = async (req: AuthRequest, res: Response) => {
   try {
@@ -71,3 +72,20 @@ export const deleteBoardHandler = async (
     res.status(403).json({ message: error.message });
   }
 };
+
+export const inviteMemberHandler = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    const boardId = req.params.boardId as string;
+    const { email } = req.body;
+
+    const result = await inviteMemberToBoard(boardId, email);
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+

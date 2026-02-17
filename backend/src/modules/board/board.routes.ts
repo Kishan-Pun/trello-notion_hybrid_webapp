@@ -7,6 +7,7 @@ import {
   createBoardHandler,
   getBoardsHandler,
   deleteBoardHandler,
+  inviteMemberHandler,
 } from "./board.controller.js";
 import { transferOwnership, renameBoard } from "./board.service.js";
 import { boardAccessMiddleware } from "../../middlewares/boardAccess.middleware.js";
@@ -34,23 +35,12 @@ router.put(
   },
 );
 
-router.put(
-  "/:boardId",
+router.post(
+  "/:boardId/invite",
   authMiddleware,
   boardAccessMiddleware,
-  requireRole(["OWNER"]),
-  async (req: AuthRequest, res) => {
-    try {
-      const boardId = req.params.boardId as string;
-      const { title } = req.body;
-
-      const updated = await renameBoard(boardId, title, req.userId!);
-
-      res.json(updated);
-    } catch (err: any) {
-      res.status(400).json({ message: err.message });
-    }
-  },
+  requireRole(["OWNER", "ADMIN"]),
+  inviteMemberHandler,
 );
 
 router.delete(
