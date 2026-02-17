@@ -7,6 +7,7 @@ import {
   moveTaskHandler,
   deleteTaskHandler,
 } from "./task.controller.js";
+import { requireRole } from "../../middlewares/role.middleware.js";
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.put(
   "/:taskId",
   authMiddleware,
   boardAccessMiddleware,
+  requireRole(["OWNER", "ADMIN"]),
   updateTaskHandler,
 );
 router.put(
@@ -28,6 +30,7 @@ router.delete(
   "/:taskId",
   authMiddleware,
   boardAccessMiddleware,
+  requireRole(["OWNER", "ADMIN"]),
   deleteTaskHandler,
 );
 

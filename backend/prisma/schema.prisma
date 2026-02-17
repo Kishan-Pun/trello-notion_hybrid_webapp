@@ -15,6 +15,7 @@ model User {
   tasks      TaskAssignee[]
   activities ActivityLog[]
   createdAt  DateTime       @default(now())
+  comments   Comment[]
 }
 
 model Board {
@@ -50,11 +51,14 @@ model Task {
   id          String         @id @default(uuid())
   title       String
   description String?
+  dueDate     DateTime?
   position    Int
   listId      String
   list        List           @relation(fields: [listId], references: [id], onDelete: Cascade)
   assignees   TaskAssignee[]
+  labels      Label[]
   createdAt   DateTime       @default(now())
+  comments    Comment[]
 }
 
 model TaskAssignee {
@@ -64,7 +68,7 @@ model TaskAssignee {
   task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([taskId, userId])
+  @@unique([taskId, userId], name: "taskId_userId")
 }
 
 model ActivityLog {
@@ -75,5 +79,23 @@ model ActivityLog {
   metadata  Json?
   board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Label {
+  id     String @id @default(uuid())
+  name   String
+  color  String
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  taskId    String
+  userId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }

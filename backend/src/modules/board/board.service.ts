@@ -1,13 +1,12 @@
 import prisma from "../../config/prisma.js";
 
-export const createBoard = async (title: string, ownerId: string) => {
+export const createBoard = async (title: string, userId: string) => {
   const board = await prisma.board.create({
     data: {
       title,
-      ownerId,
       members: {
         create: {
-          userId: ownerId,
+          userId,
           role: "OWNER",
         },
       },
@@ -81,4 +80,50 @@ export const transferOwnership = async (
   });
 
   return { message: "Ownership transferred successfully" };
+};
+
+export const renameBoard = async (
+  boardId: string,
+  title: string,
+  currentUserId: string
+) => {
+  const member = await prisma.boardMember.findUnique({
+    where: {
+      boardId_userId: {
+        boardId,
+        userId: currentUserId,
+      },
+    },
+  });
+
+  if (!member || member.role !== "OWNER") {
+    throw new Error("Only owner can rename board");
+  }
+
+  return prisma.board.update({
+    where: { id: boardId },
+    data: { title },
+  });
+};
+
+export const deleteBoard = async (
+  boardId: string,
+  currentUserId: string
+) => {
+  const member = await prisma.boardMember.findUnique({
+    where: {
+      boardId_userId: {
+        boardId,
+        userId: currentUserId,
+      },
+    },
+  });
+
+  if (!member || member.role !== "OWNER") {
+    throw new Error("Only owner can delete board");
+  }
+
+  return prisma.board.delete({
+    where: { id: boardId },
+  });
 };

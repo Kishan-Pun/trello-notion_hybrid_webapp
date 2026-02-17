@@ -6,6 +6,7 @@ import listRoutes from "./modules/list/list.routes.js";
 import taskRoutes from "./modules/task/task.routes.js";
 import activityRoutes from "./modules/activity/activity.routes.js";
 import boardMemberRoutes from "./modules/board/boardMember.routes.js";
+import taskAssigneeRoutes from "./modules/task/taskAssignee.routes.js";
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use("/api/lists", listRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/board-members", boardMemberRoutes);
+app.use("/api/task-assignees", taskAssigneeRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "API is running 🚀" });

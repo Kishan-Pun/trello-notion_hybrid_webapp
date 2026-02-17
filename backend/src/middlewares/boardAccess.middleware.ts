@@ -7,57 +7,60 @@ export const boardAccessMiddleware = async (
   res: Response,
   next: NextFunction
 ) => {
-  let boardId =
-    req.params.boardId ||
-    req.body.boardId;
+  try {
+    let boardId: string | undefined =
+      (req.params.boardId as string) ||
+      (req.body?.boardId as string);
 
-  if (req.params.taskId) {
-    const taskId = req.params.taskId as string;
+    // If taskId provided → get board from task
+    if (req.params.taskId) {
+      const task = await prisma.task.findUnique({
+        where: { id: req.params.taskId as string },
+        include: { list: true },
+      });
 
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      include: {
-        list: true,
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      boardId = task.list.boardId;
+    }
+
+    // If listId provided → get board from list
+    if (req.body?.listId) {
+      const list = await prisma.list.findUnique({
+        where: { id: req.body.listId as string },
+      });
+
+      if (!list) {
+        return res.status(404).json({ message: "List not found" });
+      }
+
+      boardId = list.boardId;
+    }
+
+    if (!boardId) {
+      return res.status(400).json({ message: "Board ID required" });
+    }
+
+    const member = await prisma.boardMember.findUnique({
+      where: {
+        boardId_userId: {
+          boardId,
+          userId: req.userId!,
+        },
       },
     });
 
-    if (!task || !task.list) {
-      return res.status(404).json({ message: "Task not found" });
+    if (!member) {
+      return res.status(403).json({ message: "Access denied" });
     }
 
-    boardId = task.list.boardId;
+    (req as any).boardRole = member.role;
+
+    next();
+  } catch (error) {
+    console.error("Board access error:", error);
+    res.status(500).json({ message: "Access check failed" });
   }
-
-  if (req.body.listId) {
-    const list = await prisma.list.findUnique({
-      where: { id: req.body.listId as string },
-    });
-
-    if (!list) {
-      return res.status(404).json({ message: "List not found" });
-    }
-
-    boardId = list.boardId;
-  }
-
-  if (!boardId) {
-    return res.status(400).json({ message: "Board ID required" });
-  }
-
-  const member = await prisma.boardMember.findUnique({
-    where: {
-      boardId_userId: {
-        boardId: boardId as string,
-        userId: req.userId!,
-      },
-    },
-  });
-
-  if (!member) {
-    return res.status(403).json({ message: "Access denied" });
-  }
-
-  (req as any).boardRole = member.role;
-
-  next();
 };

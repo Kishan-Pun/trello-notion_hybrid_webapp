@@ -1,9 +1,6 @@
 import prisma from "../../config/prisma.js";
 
-export const createList = async (
-  title: string,
-  boardId: string
-) => {
+export const createList = async (title: string, boardId: string) => {
   // Find current max position
   const lastList = await prisma.list.findFirst({
     where: { boardId },
@@ -28,9 +25,35 @@ export const getListsByBoard = async (boardId: string) => {
     where: { boardId },
     orderBy: { position: "asc" },
     include: {
-      tasks: true,
+      tasks: {
+        include: {
+          assignees: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 
   return lists;
+};
+
+export const updateList = async (listId: string, title: string) => {
+  return prisma.list.update({
+    where: { id: listId },
+    data: { title },
+  });
+};
+
+export const deleteList = async (listId: string) => {
+  return prisma.list.delete({
+    where: { id: listId },
+  });
 };

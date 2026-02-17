@@ -43,9 +43,9 @@ export const createTaskHandler = async (req: AuthRequest, res: Response) => {
 export const updateTaskHandler = async (req: AuthRequest, res: Response) => {
   try {
     const taskId = req.params.taskId as string;
-    const { title, description } = req.body;
+    const { title, description, dueDate } = req.body;
 
-    const task = await updateTask(taskId, title, description);
+    const task = await updateTask(taskId, title, description, dueDate);
 
     // Get boardId
     const taskWithList = await prisma.task.findUnique({
@@ -64,6 +64,7 @@ export const updateTaskHandler = async (req: AuthRequest, res: Response) => {
           taskId,
           title,
           description,
+          dueDate, 
         },
       );
 

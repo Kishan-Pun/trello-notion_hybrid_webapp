@@ -28,6 +28,7 @@ export const updateTask = async (
   taskId: string,
   title?: string,
   description?: string,
+  dueDate?: string,
 ) => {
   return prisma.task.update({
     where: { id: taskId },
@@ -35,6 +36,9 @@ export const updateTask = async (
       ...(title !== undefined && { title }),
       ...(description !== undefined && {
         description: description ?? null,
+      }),
+      ...(dueDate !== undefined && {
+        dueDate: dueDate ? new Date(dueDate) : null,
       }),
     },
   });
@@ -53,22 +57,71 @@ export const moveTask = async (
     throw new Error("Task not found");
   }
 
-  // Shift tasks in target list
+  const oldListId = task.listId;
+  const oldPosition = task.position;
+
+  // CASE 1: Moving within same list
+  if (oldListId === newListId) {
+    if (newPosition > oldPosition) {
+      // Moving down
+      await prisma.task.updateMany({
+        where: {
+          listId: oldListId,
+          position: {
+            gt: oldPosition,
+            lte: newPosition,
+          },
+        },
+        data: {
+          position: { decrement: 1 },
+        },
+      });
+    } else if (newPosition < oldPosition) {
+      // Moving up
+      await prisma.task.updateMany({
+        where: {
+          listId: oldListId,
+          position: {
+            gte: newPosition,
+            lt: oldPosition,
+          },
+        },
+        data: {
+          position: { increment: 1 },
+        },
+      });
+    }
+
+    return prisma.task.update({
+      where: { id: taskId },
+      data: { position: newPosition },
+    });
+  }
+
+  // CASE 2: Moving to different list
+
+  // Close gap in source list
   await prisma.task.updateMany({
     where: {
-      listId: newListId,
-      position: {
-        gte: newPosition,
-      },
+      listId: oldListId,
+      position: { gt: oldPosition },
     },
     data: {
-      position: {
-        increment: 1,
-      },
+      position: { decrement: 1 },
     },
   });
 
-  // Update the task
+  // Make space in target list
+  await prisma.task.updateMany({
+    where: {
+      listId: newListId,
+      position: { gte: newPosition },
+    },
+    data: {
+      position: { increment: 1 },
+    },
+  });
+
   return prisma.task.update({
     where: { id: taskId },
     data: {

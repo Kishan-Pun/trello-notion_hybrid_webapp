@@ -7,11 +7,15 @@ interface AuthContextType {
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token")
+const AuthContext = createContext<AuthContextType | null>(null);
+
+const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [token, setToken] = useState<string | null>(() =>
+    localStorage.getItem("token"),
   );
 
   const login = (newToken: string) => {
@@ -31,8 +35,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => {
+const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used inside AuthProvider");
+
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
+
   return context;
 };
+
+export { AuthProvider, useAuth };
