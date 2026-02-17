@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   DndContext,
   closestCenter,
@@ -12,7 +12,6 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import { socket } from "../socket";
 import api from "../api/axios";
 import ListColumn from "../components/ListColumn";
-import { useNavigate } from "react-router-dom";
 import ActivityPanel from "../components/ActivityPanel";
 
 interface Assignee {
@@ -37,34 +36,25 @@ interface List {
 
 const BoardPage = () => {
   const { boardId } = useParams();
-  const [lists, setLists] = useState<List[]>([]);
-  const [newListTitle, setNewListTitle] = useState("");
-  const [members, setMembers] = useState<any[]>([]);
-  const [showActivity, setShowActivity] = useState(false);
-
   const navigate = useNavigate();
+
+  const [lists, setLists] = useState<List[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
+  const [newListTitle, setNewListTitle] = useState("");
+  const [showActivity, setShowActivity] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 6,
-      },
+      activationConstraint: { distance: 6 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 150,
-        tolerance: 5,
-      },
+      activationConstraint: { delay: 150, tolerance: 5 },
     }),
   );
 
   useEffect(() => {
     if (!boardId) return;
-
-    const fetchMembers = async () => {
-      const res = await api.get(`/board-members/${boardId}`);
-      setMembers(res.data);
-    };
 
     fetchLists();
     fetchMembers();
@@ -72,18 +62,13 @@ const BoardPage = () => {
     socket.connect();
     socket.emit("join_board", boardId);
 
-    socket.on("task_created", (task: Task) => {
-      setLists((prevLists) =>
-        prevLists.map((list) =>
-          list.id === task.listId
-            ? { ...list, tasks: [...list.tasks, task] }
-            : list,
-        ),
-      );
-    });
+    socket.on("task_created", fetchLists);
+    socket.on("task_updated", fetchLists);
+    socket.on("task_deleted", fetchLists);
+    socket.on("task_moved", fetchLists);
 
     return () => {
-      socket.off("task_created");
+      socket.disconnect();
     };
   }, [boardId]);
 
@@ -92,21 +77,35 @@ const BoardPage = () => {
     setLists(res.data);
   };
 
+  const fetchMembers = async () => {
+    const res = await api.get(`/board-members/${boardId}`);
+    setMembers(res.data);
+
+    const currentUserId = localStorage.getItem("userId");
+    const me = res.data.find((m: any) => m.user.id === currentUserId);
+    setCurrentRole(me?.role || null);
+  };
+
   const createList = async () => {
     if (!newListTitle.trim()) return;
 
-    await api.post("/lists", {
-      title: newListTitle,
-      boardId,
-    });
+    try {
+      await api.post("/lists", {
+        title: newListTitle,
+        boardId,
+      });
 
-    setNewListTitle("");
-    fetchLists();
+      setNewListTitle("");
+      fetchLists();
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        alert("Only Owner or Admin can create lists");
+      }
+    }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-
     if (!over || active.id === over.id) return;
 
     let sourceList: List | undefined;
@@ -123,47 +122,20 @@ const BoardPage = () => {
 
     if (!sourceList || !targetList) return;
 
-    const sourceIndex = sourceList.tasks.findIndex((t) => t.id === active.id);
     const targetIndex = targetList.tasks.findIndex((t) => t.id === over.id);
-
-    const updatedLists = lists.map((list) => {
-      if (list.id === sourceList!.id && sourceList === targetList) {
-        // Reordering inside same list
-        const newTasks = [...list.tasks];
-        const [moved] = newTasks.splice(sourceIndex, 1);
-        newTasks.splice(targetIndex, 0, moved);
-        return { ...list, tasks: newTasks };
-      }
-
-      if (list.id === sourceList!.id) {
-        // Remove from source list
-        const newTasks = list.tasks.filter((t) => t.id !== active.id);
-        return { ...list, tasks: newTasks };
-      }
-
-      if (list.id === targetList!.id) {
-        // Insert into target list
-        const newTasks = [...list.tasks];
-        const movedTask = sourceList!.tasks[sourceIndex];
-        newTasks.splice(targetIndex, 0, movedTask);
-        return { ...list, tasks: newTasks };
-      }
-
-      return list;
-    });
-
-    setLists(updatedLists);
 
     await api.put(`/tasks/${active.id}/move`, {
       newListId: targetList.id,
       newPosition: targetIndex,
     });
+
+    fetchLists();
   };
 
   return (
     <div className="min-h-screen bg-slate-900 text-gray-200">
       <div className="flex flex-col md:flex-row h-screen">
-        {/* LEFT SIDE (BOARD AREA) */}
+        {/* LEFT SIDE */}
         <div className="flex-1 p-4 md:p-6 overflow-auto">
           <div className="flex items-center justify-between mb-6">
             <button
@@ -173,7 +145,16 @@ const BoardPage = () => {
               ← Back to Boards
             </button>
 
-            <h1 className="text-2xl font-bold text-white">Board</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold text-white">Board</h1>
+
+              <button
+                onClick={() => navigate(`/boards/${boardId}/settings`)}
+                className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-md text-sm"
+              >
+                ⚙ Settings
+              </button>
+            </div>
           </div>
 
           <DndContext
@@ -181,7 +162,7 @@ const BoardPage = () => {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-6 flex-nowrap touch-pan-x an-x min-h-full">
+            <div className="flex gap-4 overflow-x-auto pb-6">
               {lists.map((list) => (
                 <ListColumn
                   key={list.id}
@@ -191,39 +172,41 @@ const BoardPage = () => {
                 />
               ))}
 
-              <div className="w-full md:w-64 bg-slate-800 p-4 rounded-xl shadow-lg">
-                <input
-                  value={newListTitle}
-                  onChange={(e) => setNewListTitle(e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 p-2 rounded text-white mb-2"
-                  placeholder="New list title"
-                />
-                <button
-                  onClick={createList}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded"
-                >
-                  Add List
-                </button>
-              </div>
+              {currentRole !== "MEMBER" && (
+                <div className="w-64 bg-slate-800 p-4 rounded-xl">
+                  <input
+                    value={newListTitle}
+                    onChange={(e) => setNewListTitle(e.target.value)}
+                    className="w-full bg-slate-700 border border-slate-600 p-2 rounded text-white mb-2"
+                    placeholder="New list title"
+                  />
+                  <button
+                    onClick={createList}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded"
+                  >
+                    Add List
+                  </button>
+                </div>
+              )}
             </div>
           </DndContext>
         </div>
 
-        {/* RIGHT SIDE (ACTIVITY PANEL) */}
+        {/* RIGHT SIDE ACTIVITY */}
         <div
-          className={`fixed top-0 right-0 h-full bg-slate-800 border-l border-slate-700 shadow-xl transition-all duration-300 ${
-            showActivity ? "w-80" : "w-12"
+          className={`hidden md:flex flex-col bg-slate-800 border-l border-slate-700 transition-all duration-300 ${
+            showActivity ? "w-80" : "w-14"
           }`}
         >
           <div
             onClick={() => setShowActivity(!showActivity)}
-            className="p-3 cursor-pointer text-gray-300 hover:text-white"
+            className="p-3 cursor-pointer text-gray-300 hover:text-white border-b border-slate-700"
           >
             {showActivity ? "→" : "←"}
           </div>
 
           {showActivity && (
-            <div className="hidden md:block">
+            <div className="flex-1 overflow-y-auto">
               <ActivityPanel boardId={boardId!} />
             </div>
           )}

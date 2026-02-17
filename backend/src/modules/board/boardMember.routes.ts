@@ -10,23 +10,57 @@ import {
   updateMemberRole,
 } from "./boardMember.service.js";
 import { AuthRequest } from "../../middlewares/auth.middleware.js";
+import prisma from "../../config/prisma.js"; // Make sure this exists
 
 const router = Router();
 
 router.post(
-  "/:boardId/:userId",
+  "/invite/:boardId",
   authMiddleware,
   boardAccessMiddleware,
   requireRole(["OWNER", "ADMIN"]),
   async (req: AuthRequest, res) => {
-    const { boardId, userId } = req.params as {
-      boardId: string;
-      userId: string;
-    };
+    try {
+      const boardId = req.params.boardId as string;
+      const { email } = req.body as { email: string };
 
-    const member = await addMemberToBoard(boardId, userId, req.userId!);
+      if (!boardId) {
+        return res.status(400).json({ message: "Board ID required" });
+      }
 
-    res.json(member);
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const existing = await prisma.boardMember.findUnique({
+        where: {
+          boardId_userId: {
+            boardId,
+            userId: user.id,
+          },
+        },
+      });
+
+      if (existing) {
+        return res.status(400).json({ message: "User already a member" });
+      }
+
+      await prisma.boardMember.create({
+        data: {
+          boardId,
+          userId: user.id,
+          role: "MEMBER",
+        },
+      });
+
+      res.json({ message: "User invited successfully" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
   },
 );
 
@@ -87,8 +121,7 @@ router.delete(
     const result = await leaveBoard(boardId, req.userId!);
 
     res.json(result);
-  }
+  },
 );
-
 
 export default router;

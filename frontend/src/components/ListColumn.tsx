@@ -39,13 +39,29 @@ const ListColumn = ({ list, members, refreshBoard }: Props) => {
           <input
             value={editedTitle}
             onChange={(e) => setEditedTitle(e.target.value)}
-            onBlur={async () => {
-              await api.put(`/lists/${list.id}`, {
-                title: editedTitle,
-              });
-              toast.success("List renamed");
-              setIsEditingList(false);
-              refreshBoard();
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                try {
+                  await api.put(`/lists/${list.id}`, {
+                    title: editedTitle,
+                  });
+
+                  toast.success("List renamed");
+                  setIsEditingList(false);
+                  refreshBoard();
+                } catch (error: any) {
+                  if (error.response?.status === 403) {
+                    toast.error("Only Owner or Admin can edit lists");
+                  } else {
+                    toast.error("Failed to rename list");
+                  }
+                }
+              }
+
+              if (e.key === "Escape") {
+                setEditedTitle(list.title);
+                setIsEditingList(false);
+              }
             }}
             className="bg-slate-600 text-white text-sm p-1 rounded w-full"
             autoFocus
