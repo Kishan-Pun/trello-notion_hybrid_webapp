@@ -1,202 +1,225 @@
-# 🚀 Hintro – Real-Time Collaborative Kanban Board
+🚀 TaskFlow – Real-Time Collaborative Kanban Board
 
-Hintro is a full-stack real-time Kanban board application built with modern web technologies.  
-It supports task management, drag-and-drop functionality, real-time activity updates, role-based access control, and collaboration features.
+TaskFlow is a full-stack real-time Kanban board application built with modern web technologies.
+It enables teams to manage tasks collaboratively with drag-and-drop functionality, real-time updates, role-based access control, and activity tracking.
 
----
+🌟 Features
+🔐 Authentication & Authorization
 
-## 🌟 Features
+JWT-based authentication
 
-### 🔐 Authentication & Authorization
-- JWT-based authentication
-- Role-based access control (Owner, Admin, Member)
-- Secure protected routes
+Role-based access control (Owner, Admin, Member)
 
-### 📋 Board Management
-- Create boards
-- Rename board
-- Transfer ownership
-- Invite members via email
-- Role management
+Protected API routes
 
-### 📑 Lists
-- Create lists
-- Rename lists
-- Delete lists (Owner/Admin only)
-- Drag & drop ordering
+Secure middleware-based access validation
 
-### ✅ Tasks
-- Create tasks
-- Edit task title (double-click)
-- Delete tasks (Owner/Admin only)
-- Drag & drop between lists
-- Task descriptions
-- Due dates with overdue highlighting
-- Assign/unassign members
-- Labels
-- Comments system
+📋 Board Management
 
-### ⚡ Real-Time Updates
-- Socket.io integration
-- Live activity logs
-- Real-time task creation & movement
+Create boards
 
-### 📊 Activity Panel
-- Expand / collapse
-- Real-time board activity tracking
+Rename boards
 
----
+Transfer ownership
 
-# 🏗 Architecture
+Invite members by email
 
-## Frontend
-- React (TypeScript)
-- Tailwind CSS
-- dnd-kit (Drag & Drop)
-- Socket.io client
-- Axios for API communication
-- React Hot Toast for notifications
+Delete board (Owner only)
 
-Structure:
+📑 List Management
+
+Create lists
+
+Rename lists
+
+Delete lists (Owner/Admin only)
+
+Position-based ordering
+
+Drag-and-drop reordering
+
+✅ Task Management
+
+Create tasks
+
+Edit task title (double-click / Enter to save)
+
+Delete tasks (Owner/Admin only)
+
+Drag-and-drop between lists
+
+Task descriptions
+
+Due dates with overdue highlighting
+
+Assign / Unassign members
+
+Labels
+
+Comment system
+
+⚡ Real-Time Features
+
+Socket.io integration
+
+Live task updates
+
+Real-time activity logs
+
+Board-level synchronization
+
+📊 Activity Panel
+
+Expand / Collapse panel
+
+Real-time activity tracking
+
+Action metadata logging
+
+🏗 System Architecture
+Frontend
+
+Tech Stack
+
+React (TypeScript)
+
+Tailwind CSS
+
+dnd-kit (Drag & Drop)
+
+Socket.io Client
+
+Axios
+
+React Hot Toast
+
+Structure
 
 frontend/
 ├── src/
-│ ├── pages/
-│ ├── components/
-│ ├── api/
-│ ├── context/
-│ └── socket.ts
+│   ├── pages/
+│   ├── components/
+│   ├── api/
+│   ├── context/
+│   └── socket.ts
 
+Backend
 
-## Backend
-- Node.js
-- Express
-- Prisma ORM
-- PostgreSQL
-- Socket.io
-- JWT Authentication
-- Nodemailer (Email invites)
+Tech Stack
 
-Structure:
+Node.js
+
+Express
+
+Prisma ORM
+
+PostgreSQL
+
+JWT Authentication
+
+Socket.io
+
+Nodemailer (Email invites)
+
+Structure
 
 backend/
 ├── src/
-│ ├── modules/
-│ │ ├── board/
-│ │ ├── list/
-│ │ ├── task/
-│ │ ├── activity/
-│ │ └── boardMember/
-│ ├── middlewares/
-│ ├── invite/
-│ └── config/
+│   ├── modules/
+│   │   ├── board/
+│   │   ├── list/
+│   │   ├── task/
+│   │   ├── activity/
+│   │   └── boardMember/
+│   ├── middlewares/
+│   ├── config/
+│   └── server.ts
 
+🛠 Setup Instructions
+1️⃣ Clone Repository
+git clone <your-repository-url>
+cd taskflow
 
----
-
-# 🛠 Setup Instructions
-
-## 1️⃣ Clone Repository
-
-```bash
-git clone <your-repo-url>
-cd hintro
-
+2️⃣ Backend Setup
 cd backend
 npm install
 
-Create .env file
-
-DATABASE_URL=postgresql://username:password@localhost:5432/hintro
-JWT_SECRET=your_secret_key
+Create .env file inside backend folder:
+DATABASE_URL=postgresql://username:password@localhost:5432/taskflow
+JWT_SECRET=your_jwt_secret
 
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
 
-npx prisma generate 
+Run Prisma
+npx prisma generate
 npx prisma migrate dev
 
-RUN backend 
-
-- npm run dev
-
-backend will run on 
-
-http://localhost:5000 
-
-Frontend Setup
-
-cd frontend 
-npm install 
+Start Backend
 npm run dev
 
-frontend will run on: 
 
+Backend runs at:
+
+http://localhost:5000
+
+3️⃣ Frontend Setup
+cd frontend
+npm install
+npm run dev
+
+
+Frontend runs at:
+
+http://localhost:5173
 
 📡 API Documentation
 Authentication
-Register
-POST /api/auth/register
-
-Login
-POST /api/auth/login
-
+Method	Endpoint	Description
+POST	/api/auth/register	Register user
+POST	/api/auth/login	Login user
 Boards
-Create Board
-POST /api/boards
-
-Rename Board
-PUT /api/boards/:boardId
-
-Transfer Ownership
-PUT /api/boards/:boardId/transfer/:userId
-
+Method	Endpoint
+POST	/api/boards
+GET	/api/boards
+PUT	/api/boards/:boardId
+DELETE	/api/boards/:boardId
+PUT	/api/boards/:boardId/transfer/:userId
 Lists
-Create List
-POST /api/lists
-
-Get Lists
-GET /api/lists/:boardId
-
-Rename List
-PUT /api/lists/:listId
-
-Delete List
-DELETE /api/lists/:listId
-
+Method	Endpoint
+POST	/api/lists
+GET	/api/lists/:boardId
+PUT	/api/lists/:listId
+DELETE	/api/lists/:listId
 Tasks
-Create Task
-POST /api/tasks
-
-Update Task
-PUT /api/tasks/:taskId
-
-Move Task
-PUT /api/tasks/:taskId/move
-
-Delete Task
-DELETE /api/tasks/:taskId
-
+Method	Endpoint
+POST	/api/tasks
+PUT	/api/tasks/:taskId
+PUT	/api/tasks/:taskId/move
+DELETE	/api/tasks/:taskId
 Task Assignees
-Assign User
-POST /api/task-assignees/:taskId/:userId
-
-Remove User
-DELETE /api/task-assignees/:taskId/:userId
-
+Method	Endpoint
+POST	/api/task-assignees/:taskId/:userId
+DELETE	/api/task-assignees/:taskId/:userId
 Comments
-Add Comment
-POST /api/comments/:taskId
-
+Method	Endpoint
+POST	/api/comments/:taskId
 Activity
-Get Activity Logs
-GET /api/activity/:boardId
-
+Method	Endpoint
+GET	/api/activity/:boardId
 🔒 Role System
 Role	Permissions
-OWNER	Full access
-ADMIN	Manage tasks & lists
-MEMBER	Limited access
+OWNER	Full control
+ADMIN	Manage lists & tasks
+MEMBER	Limited task access
+
+Only OWNER can:
+
+Delete board
+
+Transfer ownership
+
+Rename board
 
 Only OWNER & ADMIN can:
 
@@ -204,7 +227,7 @@ Delete lists
 
 Delete tasks
 
-Transfer ownership
+Edit lists
 
 📧 Invite System
 
@@ -212,50 +235,57 @@ Invite users via email
 
 Uses Nodemailer with Gmail SMTP
 
-Invited user joins board after registration
+Invited user becomes board member after registration
 
 ⚙️ Assumptions
 
 Users must be registered before assignment
 
-Lists maintain position order
+Lists maintain position-based ordering
 
-Tasks maintain position order inside lists
+Tasks maintain position ordering within lists
 
-Only Owner/Admin can delete content
+Role-based access is enforced via middleware
+
+Email invites assume valid SMTP credentials
 
 ⚖️ Trade-offs
 
-No pagination for activity logs (limited to recent)
-
-Email invite uses basic SMTP (no production mail service)
+No pagination for activity logs
 
 No file uploads
 
 No caching layer
 
-No unit tests included
+No unit/integration tests
+
+Basic email configuration (not production mail service)
 
 👤 Demo Credentials
-Email: demo@hintro.com
+Email: demo@taskflow.com
 Password: 123456
 
-🎯 Future Improvements
+🚀 Future Improvements
 
 Board background customization
 
-Dark/Light theme toggle
+Light/Dark theme toggle
 
-Task priority levels
+Task priority system
 
-Attachments support
+File attachments
 
-Notifications system
+Notification system
 
-Deployment to cloud (AWS / Vercel)
+Cloud deployment (AWS / Vercel)
 
-🧑‍💻 Author
+Unit testing
 
-Built by: Kishan Pun
-Tech Stack: React | Node.js | Prisma | PostgreSQL | Socket.io
+API rate limiting
 
+👨‍💻 Author
+
+Kishan Pun
+
+Tech Stack:
+React | TypeScript | Node.js | Express | Prisma | PostgreSQL | Socket.io

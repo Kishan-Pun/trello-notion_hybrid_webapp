@@ -49,7 +49,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-slate-900 text-gray-200">
       {/* NAVBAR */}
       <div className="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Hintro</h1>
+        <h1 className="text-2xl font-bold text-white tracking-tight">TaskFlow</h1>
 
         <div className="flex gap-3">
           <button
