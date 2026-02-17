@@ -3,7 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import api from "../api/axios";
 import toast from "react-hot-toast";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Pencil } from "lucide-react";
 
 interface Label {
   id: string;
@@ -89,29 +89,37 @@ const SortableTask = ({ task, members, refreshBoard }: Props) => {
     >
       {/* HEADER */}
       <div className="flex justify-between items-start gap-2">
-        {isEditing ? (
-          <input
-            value={editedTitle}
-            onChange={(e) => setEditedTitle(e.target.value)}
-            onBlur={async () => {
-              await api.put(`/tasks/${task.id}`, {
-                title: editedTitle,
-              });
-              toast.success("Task updated");
-              setIsEditing(false);
-              refreshBoard();
-            }}
-            className="bg-slate-600 text-white text-sm p-1 rounded w-full"
-            autoFocus
-          />
-        ) : (
-          <div
-            onDoubleClick={() => setIsEditing(true)}
-            className="text-slate-100 font-medium cursor-pointer"
-          >
-            {task.title}
-          </div>
-        )}
+        <div className="flex items-center gap-2 w-full">
+          {isEditing ? (
+            <input
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
+              onBlur={async () => {
+                await api.put(`/tasks/${task.id}`, {
+                  title: editedTitle,
+                });
+                toast.success("Task updated");
+                setIsEditing(false);
+                refreshBoard();
+              }}
+              className="bg-slate-600 text-white text-sm p-1 rounded w-full"
+              autoFocus
+            />
+          ) : (
+            <>
+              <div className="text-slate-100 font-medium wrap-break-words flex-1">
+                {task.title}
+              </div>
+
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-gray-400 hover:text-white transition"
+              >
+                <Pencil size={14} />
+              </button>
+            </>
+          )}
+        </div>
 
         {/* DRAG HANDLE ONLY */}
         <div

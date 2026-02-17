@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { boardAccessMiddleware } from "../../middlewares/boardAccess.middleware.js";
+import { requireRole } from "../../middlewares/role.middleware.js";
 import {
   createListHandler,
   getListsHandler,
   updateListHandler,
   deleteListHandler,
 } from "./list.controller.js";
-import { requireRole } from "../../middlewares/role.middleware.js";
 
 const router = Router();
 
@@ -16,16 +16,22 @@ router.post(
   authMiddleware,
   boardAccessMiddleware,
   requireRole(["OWNER", "ADMIN"]),
-  createListHandler,
+  createListHandler
 );
-router.get("/:boardId", authMiddleware, boardAccessMiddleware, getListsHandler);
+
+router.get(
+  "/:boardId",
+  authMiddleware,
+  boardAccessMiddleware,
+  getListsHandler
+);
 
 router.put(
   "/:listId",
   authMiddleware,
   boardAccessMiddleware,
   requireRole(["OWNER", "ADMIN"]),
-  updateListHandler,
+  updateListHandler
 );
 
 router.delete(
@@ -33,7 +39,7 @@ router.delete(
   authMiddleware,
   boardAccessMiddleware,
   requireRole(["OWNER", "ADMIN"]),
-  deleteListHandler,
+  deleteListHandler
 );
 
 export default router;

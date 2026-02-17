@@ -6,6 +6,7 @@ import {
 import SortableTask from "./SortableTask";
 import api from "../api/axios";
 import { toast } from "react-hot-toast";
+import { Pencil } from "lucide-react";
 
 interface Task {
   id: string;
@@ -32,30 +33,36 @@ const ListColumn = ({ list, members, refreshBoard }: Props) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
-    <div className="min-w-65 w-full md:w-64 bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
-      {isEditingList ? (
-        <input
-          value={editedTitle}
-          onChange={(e) => setEditedTitle(e.target.value)}
-          onBlur={async () => {
-            await api.put(`/lists/${list.id}`, {
-              title: editedTitle,
-            });
-            toast.success("List renamed");
-            setIsEditingList(false);
-            refreshBoard();
-          }}
-          className="bg-slate-600 text-white text-sm p-1 rounded w-full mb-4"
-          autoFocus
-        />
-      ) : (
-        <h2
-          onDoubleClick={() => setIsEditingList(true)}
-          className="font-semibold mb-4 text-white cursor-pointer"
-        >
-          {list.title}
-        </h2>
-      )}
+    <div className="min-w-65 w-[85%] sm:w-[70%] md:w-64 shrink-0 bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
+      <div className="flex items-center justify-between mb-4">
+        {isEditingList ? (
+          <input
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+            onBlur={async () => {
+              await api.put(`/lists/${list.id}`, {
+                title: editedTitle,
+              });
+              toast.success("List renamed");
+              setIsEditingList(false);
+              refreshBoard();
+            }}
+            className="bg-slate-600 text-white text-sm p-1 rounded w-full"
+            autoFocus
+          />
+        ) : (
+          <>
+            <h2 className="font-semibold text-white flex-1">{list.title}</h2>
+
+            <button
+              onClick={() => setIsEditingList(true)}
+              className="text-gray-400 hover:text-white transition"
+            >
+              <Pencil size={14} />
+            </button>
+          </>
+        )}
+      </div>
 
       <div className="space-y-2">
         <SortableContext

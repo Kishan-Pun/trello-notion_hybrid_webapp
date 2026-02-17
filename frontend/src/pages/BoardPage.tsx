@@ -47,13 +47,13 @@ const BoardPage = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 4,
+        distance: 6,
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 120,
-        tolerance: 8,
+        delay: 150,
+        tolerance: 5,
       },
     }),
   );
@@ -162,9 +162,9 @@ const BoardPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-gray-200">
-      <div className="flex h-screen relative">
+      <div className="flex flex-col md:flex-row h-screen">
         {/* LEFT SIDE (BOARD AREA) */}
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 p-4 md:p-6 overflow-auto">
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => navigate("/dashboard")}
@@ -181,7 +181,7 @@ const BoardPage = () => {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <div className="flex gap-6 overflow-x-auto pb-6">
+            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-6 flex-nowrap touch-pan-x an-x min-h-full">
               {lists.map((list) => (
                 <ListColumn
                   key={list.id}
@@ -223,7 +223,7 @@ const BoardPage = () => {
           </div>
 
           {showActivity && (
-            <div className="overflow-y-auto h-[90%]">
+            <div className="hidden md:block">
               <ActivityPanel boardId={boardId!} />
             </div>
           )}

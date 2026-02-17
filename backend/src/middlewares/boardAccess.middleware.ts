@@ -1,6 +1,6 @@
+import { Response, NextFunction } from "express";
 import prisma from "../config/prisma.js";
 import { AuthRequest } from "./auth.middleware.js";
-import { Response, NextFunction } from "express";
 
 export const boardAccessMiddleware = async (
   req: AuthRequest,
@@ -8,14 +8,22 @@ export const boardAccessMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    let boardId: string | undefined =
-      (req.params.boardId as string) ||
-      (req.body?.boardId as string);
+    let boardId: string | undefined;
 
-    // If taskId provided → get board from task
-    if (req.params.taskId) {
+    // 1️⃣ From params.boardId
+    if (typeof req.params.boardId === "string") {
+      boardId = req.params.boardId;
+    }
+
+    // 2️⃣ From body.boardId
+    if (typeof req.body?.boardId === "string") {
+      boardId = req.body.boardId;
+    }
+
+    // 3️⃣ From taskId
+    if (typeof req.params.taskId === "string") {
       const task = await prisma.task.findUnique({
-        where: { id: req.params.taskId as string },
+        where: { id: req.params.taskId },
         include: { list: true },
       });
 
@@ -26,10 +34,23 @@ export const boardAccessMiddleware = async (
       boardId = task.list.boardId;
     }
 
-    // If listId provided → get board from list
-    if (req.body?.listId) {
+    // 4️⃣ From listId in params
+    if (typeof req.params.listId === "string") {
       const list = await prisma.list.findUnique({
-        where: { id: req.body.listId as string },
+        where: { id: req.params.listId },
+      });
+
+      if (!list) {
+        return res.status(404).json({ message: "List not found" });
+      }
+
+      boardId = list.boardId;
+    }
+
+    // 5️⃣ From listId in body
+    if (typeof req.body?.listId === "string") {
+      const list = await prisma.list.findUnique({
+        where: { id: req.body.listId },
       });
 
       if (!list) {
@@ -61,6 +82,6 @@ export const boardAccessMiddleware = async (
     next();
   } catch (error) {
     console.error("Board access error:", error);
-    res.status(500).json({ message: "Access check failed" });
+    return res.status(500).json({ message: "Access check failed" });
   }
 };
